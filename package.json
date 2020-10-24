@@ -11,13 +11,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "crypto-random-string": "^3.3.0",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "express": "^4.17.1",
-    "monk": "^7.3.2",
+    "mongoose": "^5.10.9",
     "morgan": "^1.10.0",
+    "shortid": "^2.2.16",
     "yup": "^0.29.3"
   },
   "devDependencies": {

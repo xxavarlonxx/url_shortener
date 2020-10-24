@@ -1,46 +1,61 @@
 const express = require('express');
-const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
-const cryptoRandomString = require('crypto-random-string');
-//const db = require('monk')('admin:admin@localhost:27017/urls');
 const yup = require('yup');
+const mongoose = require('mongoose');
+const ShortUrl = require('./models/shortUrl')
 
+mongoose.connect('mongodb://admin:admin@localhost:27017', {
+    useNewUrlParser: true, useUnifiedTopology: true
+})
 
 const app = express();
 app.set('view engine', 'ejs');
 
 app.use(morgan('tiny'));
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({extended: false}));
 
-app.get('/',(req, res) => {
-    res.render('index');
+app.get('/', async (req, res) => {
+    const shorturls = await ShortUrl.find()
+    res.render('index', {shorturls: shorturls});
 });
 
 
 
-app.post('/url', async (req, res, next) => {
+app.post('/shortUrls', async (req, res, next) => {
     const schema = yup.object().shape({
-        url: yup.string().trim().url().required(),
+        fullUrl: yup.string().trim().url().required(),
     });
-    const {url} = req.body;
+    const {fullUrl} = req.body;
     try{
-        await schema.validate({url});
-        const slug = cryptoRandomString({length: 5, type: 'url-safe'}).toLowerCase();
-
-        res.json({
-            slug
-        });
+        await schema.validate({fullUrl});
+        await ShortUrl.create({full: fullUrl})
+        res.redirect('/')
     }catch(error){
-        error.statusCode = 400
         next(error);
     }
 });
 
-app.get('/:slug', (req, res) =>{
-    res.js
-});
+app.get('/:shortUrl', async (req, res, next) => {
+    const schema = yup.object().shape({
+        shortUrl: yup.string().trim().required(),
+    })
+    const {shortUrl} = req.params
+
+    try{
+        await schema.validate({shortUrl})
+        const shortUrlObj = await ShortUrl.findOne({short: shortUrl})
+        if(shortUrlObj == null) res.sendStatus(404)
+
+        shortUrlObj.clicks++
+        shortUrlObj.save()
+
+        res.redirect(shortUrlObj.full)
+    }catch(error){
+        next(error)
+    }
+})
 
 app.use((req, res, next) => {
     const error = new Error(`Not Found - ${req.originalUrl}`);
